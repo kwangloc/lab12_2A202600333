@@ -57,38 +57,46 @@ class CostGuard:
             self._records[user_id] = UsageRecord(user_id=user_id, day=today)
         return self._records[user_id]
 
-    def check_budget(self, user_id: str) -> None:
+    def check_budget(self, user_id: str, estimated_cost: float = 0.0) -> bool:
         """
         Kiểm tra budget trước khi gọi LLM.
-        Raise 402 nếu vượt budget.
+        Dùng Redis để track monthly spending — stateless, scale-safe.
+        Raise 402 nếu vượt budget, trả về True nếu còn budget.
         """
-        record = self._get_record(user_id)
+        import redis as redis_lib
+        from datetime import datetime
 
-        # Global budget check
-        if self._global_cost >= self.global_daily_budget_usd:
-            logger.critical(f"GLOBAL BUDGET EXCEEDED: ${self._global_cost:.4f}")
-            raise HTTPException(
-                status_code=503,
-                detail="Service temporarily unavailable due to budget limits. Try again tomorrow.",
-            )
+        r = redis_lib.from_url(
+            __import__("os").getenv("REDIS_URL", "redis://localhost:6379")
+        )
 
-        # Per-user budget check
-        if record.total_cost_usd >= self.daily_budget_usd:
+        month_key = datetime.now().strftime("%Y-%m")
+        key = f"budget:{user_id}:{month_key}"
+
+        current = float(r.get(key) or 0)
+
+        if current + estimated_cost > self.daily_budget_usd:
+            logger.warning(f"User {user_id} budget exceeded: ${current:.4f} used")
             raise HTTPException(
                 status_code=402,  # Payment Required
                 detail={
-                    "error": "Daily budget exceeded",
-                    "used_usd": record.total_cost_usd,
+                    "error": "Monthly budget exceeded",
+                    "used_usd": current,
                     "budget_usd": self.daily_budget_usd,
-                    "resets_at": "midnight UTC",
+                    "resets_at": "start of next month",
                 },
             )
 
+        r.incrbyfloat(key, estimated_cost)
+        r.expire(key, 32 * 24 * 3600)  # 32 days
+
         # Warning khi gần hết budget
-        if record.total_cost_usd >= self.daily_budget_usd * self.warn_at_pct:
+        if current + estimated_cost >= self.daily_budget_usd * self.warn_at_pct:
             logger.warning(
-                f"User {user_id} at {record.total_cost_usd/self.daily_budget_usd*100:.0f}% budget"
+                f"User {user_id} at {(current + estimated_cost) / self.daily_budget_usd * 100:.0f}% budget"
             )
+
+        return True
 
     def record_usage(
         self, user_id: str, input_tokens: int, output_tokens: int

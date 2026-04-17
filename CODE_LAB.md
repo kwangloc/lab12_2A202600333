@@ -107,17 +107,17 @@ python app.py
 
 | Feature | Basic | Advanced | Tại sao quan trọng? |
 |---------|-------|----------|---------------------|
-| Config | Hardcode | Env vars | ... |
-| Health check |  |  | ... |
-| Logging | print() | JSON | ... |
-| Shutdown | Đột ngột | Graceful | ... |
+| Config | Hardcode | Env vars | Tập trung quản lý config một chỗ, dễ dàng chỉnh sửa, không bị lộ thông tin trong code |
+| Health check | Không có | Có | Các platform thường có cơ chế kiểm tra định kỳ qua healthcheck, sớm phát hiện và restart khi app sập |
+| Logging | print() | JSON | Log cần phân level và có cấu trúc để dễ theo dõi và debug |
+| Shutdown | Đột ngột | Graceful | Trước khi shutdown cần chờ request hiện tại hoàn thành, và cần có một thông báo để cung cấp thông tin cho việc maintain |
 
 ###  Checkpoint 1
 
-- [ ] Hiểu tại sao hardcode secrets là nguy hiểm
-- [ ] Biết cách dùng environment variables
-- [ ] Hiểu vai trò của health check endpoint
-- [ ] Biết graceful shutdown là gì
+- [X] Hiểu tại sao hardcode secrets là nguy hiểm
+- [X] Biết cách dùng environment variables
+- [X] Hiểu vai trò của health check endpoint
+- [X] Biết graceful shutdown là gì
 
 ---
 
@@ -144,9 +144,31 @@ cd ../../02-docker/develop
 **Nhiệm vụ:** Đọc `Dockerfile` và trả lời:
 
 1. Base image là gì?
+
+   Base image là image gốc mà Dockerfile bắt đầu từ đó — mọi layer tiếp theo được xây dựng trên nền này. Nó được chỉ định bằng lệnh `FROM`.
+
+   Cụ thể: **`python:3.11`** — full Python distribution (~1 GB), bao gồm toàn bộ Python runtime và standard library.
+
 2. Working directory là gì?
+
+   Working directory là thư mục làm việc mặc định bên trong container, được đặt bằng lệnh `WORKDIR`. Mọi lệnh `RUN`, `COPY`, `ADD`, `CMD`, `ENTRYPOINT` sau đó đều được thực thi tương đối với thư mục này.
+
+   Cụ thể: **`/app`** — tất cả lệnh tiếp theo (`COPY`, `RUN`, `CMD`) đều chạy trong thư mục này bên trong container.
+
 3. Tại sao COPY requirements.txt trước?
+
+   Docker build cache hoạt động theo từng layer: nếu một layer không thay đổi, Docker tái sử dụng cache thay vì build lại từ đầu. Vì vậy, nên COPY những file ít thay đổi trước để tối ưu tốc độ build.
+
+   **Docker layer cache**: mỗi `RUN`/`COPY` tạo một layer riêng. Nếu `requirements.txt` không thay đổi, Docker tái sử dụng layer `pip install` đã cache → build nhanh hơn nhiều. Nếu copy toàn bộ code trước, mỗi lần sửa code sẽ invalidate cache và phải cài lại dependencies từ đầu.
+
 4. CMD vs ENTRYPOINT khác nhau thế nào?
+
+   Cả hai đều chỉ định lệnh chạy khi container start, nhưng khác nhau về mức độ có thể override từ bên ngoài: `ENTRYPOINT` cố định executable, còn `CMD` cung cấp default có thể bị thay thế hoàn toàn.
+
+   - **`ENTRYPOINT`**: định nghĩa executable cố định, luôn chạy khi container start — không bị ghi đè bởi `docker run <args>`.
+   - **`CMD`**: cung cấp lệnh/arguments mặc định, **có thể bị ghi đè** hoàn toàn khi truyền lệnh vào `docker run`. Ví dụ: `CMD ["python", "app.py"]` sẽ bị thay thế nếu chạy `docker run image bash`.
+   - Kết hợp cả hai: `ENTRYPOINT` làm executable, `CMD` làm default arguments — cho phép override arguments mà không thay executable.
+
 
 ###  Exercise 2.2: Build và run
 
@@ -167,7 +189,7 @@ curl http://localhost:8000/ask -X POST \
 ```bash
 docker images my-agent:develop
 ```
-
+- Image size: 1.15 GB
 ###  Exercise 2.3: Multi-stage build
 
 ```bash
@@ -176,8 +198,16 @@ cd ../production
 
 **Nhiệm vụ:** Đọc `Dockerfile` và tìm:
 - Stage 1 làm gì?
+
+  **Stage 1 (`builder`)**: dùng `python:3.11-slim`, cài build dependencies (`gcc`, `libpq-dev`), sau đó `pip install --user` tất cả packages vào `/root/.local`. Stage này chứa toàn bộ build toolchain nhưng **không được deploy**.
+
 - Stage 2 làm gì?
+
+  **Stage 2 (`runtime`)**: dùng `python:3.11-slim` sạch, tạo non-root user `appuser`, **chỉ copy** `/root/.local` (site-packages đã compiled) từ builder sang. Không có `gcc`, `pip cache`, hay build tools — chỉ có runtime tối thiểu.
+
 - Tại sao image nhỏ hơn?
+
+  Vì final image không chứa: `gcc`/build tools, `pip` cache, source files của packages, hay layer intermediate của stage 1. Tất cả những thứ chỉ cần để **build** bị loại bỏ, chỉ giữ lại những gì cần để **chạy**.
 
 Build và so sánh:
 ```bash
@@ -185,15 +215,66 @@ docker build -t my-agent:advanced .
 docker images | grep my-agent
 ```
 
+- So sánh: phiên bản product nhẹ hơn hẳn khi build multi-stage (160 MB so với 1.15 GB)
+```bash''
+agent-production | latest | 2fa0d77fd5e6 | 22 minutes ago | 160MB
+agent-develop | latest | 1efc1c2d9209 | 2 hours ago | 1.15GB
+```
+
+
 ###  Exercise 2.4: Docker Compose stack
 
 **Nhiệm vụ:** Đọc `docker-compose.yml` và vẽ architecture diagram.
+
+([Diagram: click for better view](./diagram.png))
+
+                ┌──────────────┐
+                │    nginx     │
+                │ (80 / 443)   │
+                └──────┬───────┘
+                       │
+                       ▼
+                ┌──────────────┐
+                │    agent     │
+                │ FastAPI app  │
+                └──────┬───────┘
+                       │
+        ┌──────────────┼──────────────┐
+        ▼                             ▼
+    ┌──────────────┐              ┌──────────────┐
+    │    redis     │              │    qdrant    │
+    │  (cache)     │              │ (vector DB)  │
+    └──────┬───────┘              └──────┬───────┘
+        │                             │
+        ▼                             ▼
+    ┌──────────────┐              ┌──────────────┐
+    │ redis_data   │              │ qdrant_data  │
+    │  (volume)    │              │  (volume)    │
+    └──────────────┘              └──────────────┘
+
+
+        (Tất cả nằm trong network: internal)
+
 
 ```bash
 docker compose up
 ```
 
 Services nào được start? Chúng communicate thế nào?
+
+**Services được start (4 services):**
+
+| Service | Image | Vai trò |
+|---------|-------|---------|
+| `agent` | build từ Dockerfile (stage `runtime`) | FastAPI AI agent xử lý requests |
+| `redis` | `redis:7-alpine` | Cache session và rate limiting |
+| `qdrant` | `qdrant/qdrant:v1.9.0` | Vector database cho RAG |
+| `nginx` | `nginx:alpine` | Reverse proxy và load balancer, expose port 80/443 |
+
+**Cách communicate:**
+- Tất cả services nằm trong network `internal` (bridge driver) → giao tiếp với nhau qua **tên service** làm hostname (e.g., `redis://redis:6379`, `http://qdrant:6333`).
+- Chỉ `nginx` expose port ra ngoài (80, 443) — `agent` không expose port trực tiếp, chỉ nhận traffic qua Nginx.
+- `agent` phụ thuộc (`depends_on`) vào `redis` và `qdrant` có health check healthy trước khi start.
 
 Test:
 ```bash
@@ -208,10 +289,10 @@ curl http://localhost/ask -X POST \
 
 ###  Checkpoint 2
 
-- [ ] Hiểu cấu trúc Dockerfile
-- [ ] Biết lợi ích của multi-stage builds
-- [ ] Hiểu Docker Compose orchestration
-- [ ] Biết cách debug container (`docker logs`, `docker exec`)
+- [X] Hiểu cấu trúc Dockerfile
+- [X] Biết lợi ích của multi-stage builds
+- [X] Hiểu Docker Compose orchestration
+- [X] Biết cách debug container (`docker logs`, `docker exec`)
 
 ---
 
@@ -313,10 +394,10 @@ cd ../production-cloud-run
 
 ###  Checkpoint 3
 
-- [ ] Deploy thành công lên ít nhất 1 platform
-- [ ] Có public URL hoạt động
-- [ ] Hiểu cách set environment variables trên cloud
-- [ ] Biết cách xem logs
+- [X] Deploy thành công lên ít nhất 1 platform (Railway)
+- [X] Có public URL hoạt động: https://day12part3-production.up.railway.app
+- [X] Hiểu cách set environment variables trên cloud
+- [X] Biết cách xem logs
 
 ---
 
@@ -339,8 +420,14 @@ cd ../../04-api-gateway/develop
 
 **Nhiệm vụ:** Đọc `app.py` và tìm:
 - API key được check ở đâu?
+    > Trong dependency function verify_api_key() (dòng 26–38), được inject vào endpoint /ask qua Depends(verify_api_key). FastAPI tự động gọi nó trước khi handler chạy.
+
 - Điều gì xảy ra nếu sai key?
+    >Không có key → HTTP 401 "Missing API key. Include header: X-API-Key: <your-key>"
+    Sai key → HTTP 403 "Invalid API key."
+
 - Làm sao rotate key?
+    >Chỉ cần thay giá trị biến môi trường AGENT_API_KEY và restart server, không cần sửa code.
 
 Test:
 ```bash
@@ -388,8 +475,22 @@ curl http://localhost:8000/ask -X POST \
 
 **Nhiệm vụ:** Đọc `rate_limiter.py` và trả lời:
 - Algorithm nào được dùng? (Token bucket? Sliding window?)
+    > Sliding Window Counter — mỗi user có một deque lưu timestamps của các request. Mỗi lần check, các timestamps cũ hơn now - window_seconds bị xóa, rồi đếm số request còn lại trong window.
+
 - Limit là bao nhiêu requests/minute?
+    >User thường: 10 req/60 giây
+
+    >Admin: 100 req/60 giây
+
 - Làm sao bypass limit cho admin?
+    > Dùng singleton instance riêng rate_limiter_admin (100 req/phút) thay vì rate_limiter_user (10 req/phút). Trong endpoint, kiểm tra role của user rồi gọi đúng limiter:
+    ```bash
+    if user.role == "admin":
+        rate_limiter_admin.check(user_id)
+    else:
+        rate_limiter_user.check(user_id)
+    ```
+
 
 Test:
 ```bash
@@ -449,10 +550,10 @@ def check_budget(user_id: str, estimated_cost: float) -> bool:
 
 ###  Checkpoint 4
 
-- [ ] Implement API key authentication
-- [ ] Hiểu JWT flow
-- [ ] Implement rate limiting
-- [ ] Implement cost guard với Redis
+- [X] Implement API key authentication
+- [X] Hiểu JWT flow
+- [X] Implement rate limiting
+- [X] Implement cost guard với Redis
 
 ---
 
