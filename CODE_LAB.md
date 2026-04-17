@@ -174,10 +174,10 @@ cd ../../02-docker/develop
 
 ```bash
 # Build image
-docker build -f 02-docker/develop/Dockerfile -t my-agent:develop .
+docker build -f 02-docker/develop/Dockerfile -t agent-develop .
 
 # Run container
-docker run -p 8000:8000 my-agent:develop
+docker run -p 8000:8000 agent-develop
 
 # Test
 curl http://localhost:8000/ask -X POST \
@@ -211,8 +211,8 @@ cd ../production
 
 Build và so sánh:
 ```bash
-docker build -t my-agent:advanced .
-docker images | grep my-agent
+docker build -f 02-docker/production/Dockerfile -t agent-production .
+docker images | grep agent-production
 ```
 
 - So sánh: phiên bản product nhẹ hơn hẳn khi build multi-stage (160 MB so với 1.15 GB)
@@ -275,6 +275,15 @@ Services nào được start? Chúng communicate thế nào?
 - Tất cả services nằm trong network `internal` (bridge driver) → giao tiếp với nhau qua **tên service** làm hostname (e.g., `redis://redis:6379`, `http://qdrant:6333`).
 - Chỉ `nginx` expose port ra ngoài (80, 443) — `agent` không expose port trực tiếp, chỉ nhận traffic qua Nginx.
 - `agent` phụ thuộc (`depends_on`) vào `redis` và `qdrant` có health check healthy trước khi start.
+
+> Kết quả của "**docker compose ps**"
+
+| NAME                  | IMAGE                  | COMMAND                  | SERVICE | CREATED         | STATUS                   | PORTS                                      |
+|-----------------------|------------------------|--------------------------|---------|-----------------|--------------------------|--------------------------------------------|
+| production-agent-1    | production-agent       | "uvicorn main:app --…"   | agent   | 4 minutes ago   | Up 4 minutes (healthy)   | 8000/tcp                                   |
+| production-nginx-1    | nginx:alpine           | "/docker-entrypoint.…"   | nginx   | 4 minutes ago   | Up 4 minutes             | 0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp   |
+| production-qdrant-1   | qdrant/qdrant:v1.9.0   | "./entrypoint.sh"        | qdrant  | 4 minutes ago   | Up 4 minutes             | 6333-6334/tcp                              |
+| production-redis-1    | redis:7-alpine         | "docker-entrypoint.s…"   | redis   | 4 minutes ago   | Up 4 minutes (healthy)   | 6379/tcp                                   |
 
 Test:
 ```bash

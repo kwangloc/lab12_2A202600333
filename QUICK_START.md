@@ -304,13 +304,13 @@ export $(cat .env | xargs)
 
 After Quick Start, you should be able to:
 
-- [ ] Run Python app locally
-- [ ] Build Docker image
-- [ ] Run Docker container
-- [ ] Deploy to Railway
-- [ ] Access public URL
-- [ ] Add API authentication
-- [ ] Test with curl
+- [X] Run Python app locally
+- [X] Build Docker image
+- [X] Run Docker container
+- [X] Deploy to Railway
+- [X] Access public URL
+- [X] Add API authentication
+- [X] Test with curl
 
 If you checked all boxes, you're ready for the full lab! 🚀
 
