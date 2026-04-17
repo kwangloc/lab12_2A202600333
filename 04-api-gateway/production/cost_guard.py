@@ -67,7 +67,7 @@ class CostGuard:
         from datetime import datetime
 
         r = redis_lib.from_url(
-            __import__("os").getenv("REDIS_URL", "redis://localhost:6379")
+            __import__("os").getenv("REDIS_URL", "redis://localhost:6379/0")
         )
 
         month_key = datetime.now().strftime("%Y-%m")

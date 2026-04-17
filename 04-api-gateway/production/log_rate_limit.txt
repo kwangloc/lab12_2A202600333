@@ -1,0 +1,30 @@
+INFO:cost_guard:Usage: user=student req=13 cost=$0.0002/1.0
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=14 cost=$0.0003/1.0
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=15 cost=$0.0003/1.0
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=16 cost=$0.0003/1.0
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=17 cost=$0.0003/1.0
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=18 cost=$0.0003/1.0
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=19 cost=$0.0004/1.0
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=20 cost=$0.0004/1.0
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=21 cost=$0.0004/1.0
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=22 cost=$0.0004/1.0
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:63541 - "POST /ask HTTP/1.1" 429 Too Many Requests

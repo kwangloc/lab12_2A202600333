@@ -25,7 +25,7 @@ import dotenv
 dotenv.load_dotenv()
 
 
-from fastapi import FastAPI, HTTPException, Security, Depends
+from fastapi import FastAPI, HTTPException, Security, Request, Depends
 from fastapi.security.api_key import APIKeyHeader
 import uvicorn
 from utils.mock_llm import ask
@@ -69,13 +69,19 @@ def root():
 
 @app.post("/ask")
 async def ask_agent(
-    question: str,
-    _key: str = Depends(verify_api_key),  # ✅ require auth
+    request: Request,
+    _key: str = Depends(verify_api_key),  # ✅ require API key
 ):
-    """Protected endpoint — cần X-API-Key header"""
+    body = await request.json()
+    question = body.get("question", "").strip()
+
+    if not question:
+        raise HTTPException(status_code=422, detail="question required")
+
     return {
         "question": question,
         "answer": ask(question),
+        "platform": "Railway",
     }
 
 
