@@ -1,0 +1,30 @@
+agent-3  | {"time":"2026-04-17 16:12:23,881","level":"INFO","msg":"{"event": "request", "q_len": 9}"}
+agent-3  | INFO:     172.20.0.6:47270 - "POST /ask HTTP/1.1" 200 OK
+nginx-1  | 172.20.0.1 - - [17/Apr/2026:16:12:24 +0000] "POST /ask HTTP/1.1" 200 120 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8115"
+agent-2  | {"time":"2026-04-17 16:12:24,044","level":"INFO","msg":"{"event": "request", "q_len": 9}"}
+agent-2  | INFO:     172.20.0.6:45496 - "POST /ask HTTP/1.1" 200 OK
+nginx-1  | 172.20.0.1 - - [17/Apr/2026:16:12:24 +0000] "POST /ask HTTP/1.1" 200 120 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8115"
+agent-1  | {"time":"2026-04-17 16:12:24,199","level":"INFO","msg":"{"event": "request", "q_len": 9}"}
+agent-1  | INFO:     172.20.0.6:43450 - "POST /ask HTTP/1.1" 200 OK
+nginx-1  | 172.20.0.1 - - [17/Apr/2026:16:12:24 +0000] "POST /ask HTTP/1.1" 200 128 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8115"
+agent-3  | {"time":"2026-04-17 16:12:24,353","level":"INFO","msg":"{"event": "request", "q_len": 9}"}
+nginx-1  | 172.20.0.1 - - [17/Apr/2026:16:12:24 +0000] "POST /ask HTTP/1.1" 200 120 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8115"
+agent-3  | INFO:     172.20.0.6:47270 - "POST /ask HTTP/1.1" 200 OK
+agent-2  | {"time":"2026-04-17 16:12:24,496","level":"INFO","msg":"{"event": "request", "q_len": 9}"}
+agent-2  | INFO:     172.20.0.6:45496 - "POST /ask HTTP/1.1" 200 OK
+nginx-1  | 172.20.0.1 - - [17/Apr/2026:16:12:24 +0000] "POST /ask HTTP/1.1" 200 120 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8115"
+agent-1  | {"time":"2026-04-17 16:12:24,643","level":"INFO","msg":"{"event": "request", "q_len": 9}"}
+agent-1  | INFO:     172.20.0.6:43450 - "POST /ask HTTP/1.1" 200 OK
+nginx-1  | 172.20.0.1 - - [17/Apr/2026:16:12:24 +0000] "POST /ask HTTP/1.1" 200 151 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8115"
+agent-3  | {"time":"2026-04-17 16:12:24,780","level":"INFO","msg":"{"event": "request", "q_len": 9}"}
+agent-3  | INFO:     172.20.0.6:47270 - "POST /ask HTTP/1.1" 200 OK
+nginx-1  | 172.20.0.1 - - [17/Apr/2026:16:12:24 +0000] "POST /ask HTTP/1.1" 200 128 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8115"
+agent-2  | {"time":"2026-04-17 16:12:24,919","level":"INFO","msg":"{"event": "request", "q_len": 9}"}
+nginx-1  | 172.20.0.1 - - [17/Apr/2026:16:12:25 +0000] "POST /ask HTTP/1.1" 200 120 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8115"
+agent-2  | INFO:     172.20.0.6:45496 - "POST /ask HTTP/1.1" 200 OK
+agent-1  | {"time":"2026-04-17 16:12:25,044","level":"INFO","msg":"{"event": "request", "q_len": 9}"}
+agent-1  | INFO:     172.20.0.6:43450 - "POST /ask HTTP/1.1" 200 OK
+nginx-1  | 172.20.0.1 - - [17/Apr/2026:16:12:25 +0000] "POST /ask HTTP/1.1" 200 151 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8115"
+agent-3  | {"time":"2026-04-17 16:12:25,175","level":"INFO","msg":"{"event": "request", "q_len": 10}"}
+agent-3  | INFO:     172.20.0.6:47270 - "POST /ask HTTP/1.1" 200 OK
+nginx-1  | 172.20.0.1 - - [17/Apr/2026:16:12:25 +0000] "POST /ask HTTP/1.1" 200 128 "-" "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.8115"
