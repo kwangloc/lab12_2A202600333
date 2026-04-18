@@ -60,42 +60,60 @@ class CostGuard:
     def check_budget(self, user_id: str, estimated_cost: float = 0.0) -> bool:
         """
         Kiểm tra budget trước khi gọi LLM.
-        Dùng Redis để track monthly spending — stateless, scale-safe.
+        Dùng Redis nếu REDIS_URL được set, fallback về in-memory khi không có Redis.
         Raise 402 nếu vượt budget, trả về True nếu còn budget.
         """
-        import redis as redis_lib
-        from datetime import datetime
+        import os
+        redis_url = os.getenv("REDIS_URL", "")
 
-        r = redis_lib.from_url(
-            __import__("os").getenv("REDIS_URL", "redis://localhost:6379/0")
-        )
+        if redis_url:
+            try:
+                import redis as redis_lib
+                from datetime import datetime
+                r = redis_lib.from_url(redis_url)
+                month_key = datetime.now().strftime("%Y-%m")
+                key = f"budget:{user_id}:{month_key}"
+                current = float(r.get(key) or 0)
+                if current + estimated_cost > self.daily_budget_usd:
+                    logger.warning(f"User {user_id} budget exceeded: ${current:.4f} used")
+                    raise HTTPException(
+                        status_code=402,
+                        detail={
+                            "error": "Monthly budget exceeded",
+                            "used_usd": current,
+                            "budget_usd": self.daily_budget_usd,
+                            "resets_at": "start of next month",
+                        },
+                    )
+                r.incrbyfloat(key, estimated_cost)
+                r.expire(key, 32 * 24 * 3600)
+                if current + estimated_cost >= self.daily_budget_usd * self.warn_at_pct:
+                    logger.warning(
+                        f"User {user_id} at {(current + estimated_cost) / self.daily_budget_usd * 100:.0f}% budget"
+                    )
+                return True
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.warning(f"Redis unavailable for cost_guard, falling back to in-memory: {e}")
 
-        month_key = datetime.now().strftime("%Y-%m")
-        key = f"budget:{user_id}:{month_key}"
-
-        current = float(r.get(key) or 0)
-
-        if current + estimated_cost > self.daily_budget_usd:
-            logger.warning(f"User {user_id} budget exceeded: ${current:.4f} used")
+        # In-memory fallback (single instance only — acceptable without Redis)
+        record = self._get_record(user_id)
+        if record.total_cost_usd + estimated_cost > self.daily_budget_usd:
+            logger.warning(f"User {user_id} budget exceeded (in-memory): ${record.total_cost_usd:.4f} used")
             raise HTTPException(
-                status_code=402,  # Payment Required
+                status_code=402,
                 detail={
-                    "error": "Monthly budget exceeded",
-                    "used_usd": current,
+                    "error": "Daily budget exceeded",
+                    "used_usd": record.total_cost_usd,
                     "budget_usd": self.daily_budget_usd,
-                    "resets_at": "start of next month",
+                    "resets_at": "tomorrow",
                 },
             )
-
-        r.incrbyfloat(key, estimated_cost)
-        r.expire(key, 32 * 24 * 3600)  # 32 days
-
-        # Warning khi gần hết budget
-        if current + estimated_cost >= self.daily_budget_usd * self.warn_at_pct:
+        if record.total_cost_usd + estimated_cost >= self.daily_budget_usd * self.warn_at_pct:
             logger.warning(
-                f"User {user_id} at {(current + estimated_cost) / self.daily_budget_usd * 100:.0f}% budget"
+                f"User {user_id} at {(record.total_cost_usd + estimated_cost) / self.daily_budget_usd * 100:.0f}% budget"
             )
-
         return True
 
     def record_usage(
