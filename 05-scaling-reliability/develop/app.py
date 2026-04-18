@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security, Request, Depends
 import uvicorn
 from utils.mock_llm import ask
 
@@ -91,9 +91,15 @@ def root():
 
 
 @app.post("/ask")
-async def ask_agent(question: str):
+async def ask_agent(request: Request):
     if not _is_ready:
         raise HTTPException(503, "Agent not ready")
+    
+    body = await request.json()
+    question = body.get("question", "").strip()
+    if not question:
+        raise HTTPException(status_code=422, detail="question required")
+
     return {"answer": ask(question)}
 
 
@@ -185,6 +191,29 @@ def handle_sigterm(signum, frame):
 
 signal.signal(signal.SIGTERM, handle_sigterm)
 signal.signal(signal.SIGINT, handle_sigterm)
+
+# Added
+import signal
+import sys
+import asyncio
+
+shutdown_event = asyncio.Event()
+
+def shutdown_handler(signum, frame):
+    print("Received shutdown signal, gracefully shutting down...")
+    shutdown_event.set()
+
+signal.signal(signal.SIGTERM, shutdown_handler)
+signal.signal(signal.SIGINT, shutdown_handler)
+
+@app.on_event("shutdown")
+async def shutdown():
+    # Cleanup resources
+    print("Closing connections...")
+    # await redis_client.close()
+    # await db.disconnect()
+    print("Shutdown complete")
+
 
 
 if __name__ == "__main__":

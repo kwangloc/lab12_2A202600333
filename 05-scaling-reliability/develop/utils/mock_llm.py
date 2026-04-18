@@ -8,13 +8,13 @@ import random
 
 MOCK_RESPONSES = {
     "default": [
-        "Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic.",
-        "Agent đang hoạt động tốt! (mock response) Hỏi thêm câu hỏi đi nhé.",
-        "Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận.",
+        "This is a mock response from the agent. Ask me anything!",
+        "Agent is running smoothly! (mock response) Ask another question.",
+        "I am an AI agent deployed on the cloud. Your question has been received.",
     ],
-    "docker": ["Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!"],
-    "deploy": ["Deployment là quá trình đưa code từ máy bạn lên server để người khác dùng được."],
-    "health": ["Agent đang hoạt động bình thường. All systems operational."],
+    "docker": ["Container is a way to package an app to run anywhere. Build once, run anywhere!"],
+    "deploy": ["Deployment is the process of moving code from your machine to a server for others to use."],
+    "health": ["Agent is running smoothly. All systems operational."],
 }
 
 

@@ -724,18 +724,70 @@ docker compose logs agent
 python test_stateless.py
 ```
 
+```bash
+ python .\test_stateless.py
+============================================================
+Stateless Scaling Demo
+============================================================
+
+Session ID: bf96cf03-6b16-4059-b575-5cced6f1fa89
+
+Request 1: [instance-04b17d]
+  Q: What is Docker?
+  A: Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!...
+
+Request 2: [instance-b5e591]
+  Q: Why do we need containers?
+  A: Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận....
+
+Request 3: [instance-3e6710]
+  Q: What is Kubernetes?
+  A: Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận....
+
+Request 4: [instance-04b17d]
+  Q: How does load balancing work?
+  A: Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ O...
+
+Request 5: [instance-b5e591]
+  Q: What is Redis used for?
+  A: Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận....
+
+------------------------------------------------------------
+Total requests: 5
+Instances used: {'instance-b5e591', 'instance-3e6710', 'instance-04b17d'}
+✅ All requests served despite different instances!
+
+--- Conversation History ---
+Total messages: 10
+  [user]: What is Docker?...
+  [assistant]: Container là cách đóng gói app để chạy ở mọi nơi. Build once...
+  [user]: Why do we need containers?...
+  [assistant]: Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã đư...
+  [user]: What is Kubernetes?...
+  [assistant]: Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã đư...
+  [user]: How does load balancing work?...
+  [assistant]: Đây là câu trả lời từ AI agent (mock). Trong production, đây...
+  [user]: What is Redis used for?...
+  [assistant]: Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã đư...
+
+✅ Session history preserved across all instances via Redis!
+```
+
+
+
+
 Script này:
 1. Gọi API để tạo conversation
 2. Kill random instance
-3. Gọi tiếp — conversation vẫn còn không?
+3. Gọi tiếp — conversation vẫn còn
 
 ###  Checkpoint 5
 
-- [ ] Implement health và readiness checks
-- [ ] Implement graceful shutdown
-- [ ] Refactor code thành stateless
-- [ ] Hiểu load balancing với Nginx
-- [ ] Test stateless design
+- [X] Implement health và readiness checks
+- [X] Implement graceful shutdown
+- [X] Refactor code thành stateless
+- [X] Hiểu load balancing với Nginx
+- [X] Test stateless design
 
 ---
 
