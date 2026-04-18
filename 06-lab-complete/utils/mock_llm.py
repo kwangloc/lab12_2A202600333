@@ -51,7 +51,7 @@ def ask(question: str, delay: float = 0.0) -> str:
         return response.text
     except Exception as e:
         logger.error(f"Gemini API error: {e} — falling back to mock response")
-        return random.choice(_MOCK_RESPONSES)
+        return f"Gemini API error: {e} — using mock response: " + random.choice(_MOCK_RESPONSES)
 
 
 def ask_stream(question: str):

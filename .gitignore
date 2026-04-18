@@ -4,6 +4,7 @@
 .env.production
 .env.*
 !.env.example
+grader.py
 
 # ── Python ──────────────────────────��────────────────────
 __pycache__/
