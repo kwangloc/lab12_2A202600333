@@ -1,8 +1,8 @@
 #  Delivery Checklist — Day 12 Lab Submission
 
-> **Student Name:** _________________________  
-> **Student ID:** _________________________  
-> **Date:** _________________________
+> **Student Name:** Trương Quang Lộc 
+> **Student ID:** 2A202600333  
+> **Date:** 2026-04-17
 
 ---
 
@@ -143,16 +143,16 @@ curl -X POST https://your-agent.railway.app/ask \
 
 ##  Pre-Submission Checklist
 
-- [ ] Repository is public (or instructor has access)
-- [ ] `MISSION_ANSWERS.md` completed with all exercises
-- [ ] `DEPLOYMENT.md` has working public URL
-- [ ] All source code in `app/` directory
-- [ ] `README.md` has clear setup instructions
-- [ ] No `.env` file committed (only `.env.example`)
-- [ ] No hardcoded secrets in code
-- [ ] Public URL is accessible and working
-- [ ] Screenshots included in `screenshots/` folder
-- [ ] Repository has clear commit history
+- [X] Repository is public (or instructor has access)
+- [x] `MISSION_ANSWERS.md` completed with all exercises
+- [x] `DEPLOYMENT.md` has working public URL
+- [x] All source code in `app/` directory
+- [x] `README.md` has clear setup instructions
+- [x] No `.env` file committed (only `.env.example`)
+- [x] No hardcoded secrets in code
+- [X] Public URL is accessible and working
+- [X] Screenshots included in `screenshots/` folder
+- [X] Repository has clear commit history
 
 ---
 

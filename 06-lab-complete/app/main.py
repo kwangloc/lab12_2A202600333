@@ -2,34 +2,37 @@
 Production AI Agent — Kết hợp tất cả Day 12 concepts
 
 Checklist:
-  ✅ Config từ environment (12-factor)
+  ✅ Config từ environment (12-factor)        — app.config
   ✅ Structured JSON logging
-  ✅ API Key authentication
-  ✅ Rate limiting
-  ✅ Cost guard
+  ✅ API Key + JWT authentication             — app.auth
+  ✅ Rate limiting (sliding window)           — app.rate_limiter
+  ✅ Cost guard (budget protection)           — app.cost_guard
   ✅ Input validation (Pydantic)
   ✅ Health check + Readiness probe
   ✅ Graceful shutdown
   ✅ Security headers
   ✅ CORS
   ✅ Error handling
+  ✅ Instance tracking (scaling)
 """
 import os
+import uuid
 import time
 import signal
 import logging
 import json
 from datetime import datetime, timezone
-from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Security, Depends, Request, Response
-from fastapi.security.api_key import APIKeyHeader
+from fastapi import FastAPI, HTTPException, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 
 from app.config import settings
+from app.auth import verify_api_key, verify_token, authenticate_user, create_token
+from app.rate_limiter import rate_limiter_user, rate_limiter_admin
+from app.cost_guard import cost_guard
 
 # Mock LLM (thay bằng OpenAI/Anthropic khi có API key)
 from utils.mock_llm import ask as llm_ask
@@ -43,58 +46,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Instance ID for horizontal scaling (folder 05)
+INSTANCE_ID = os.getenv("INSTANCE_ID", f"agent-{uuid.uuid4().hex[:8]}")
+
 START_TIME = time.time()
 _is_ready = False
 _request_count = 0
 _error_count = 0
-
-# ─────────────────────────────────────────────────────────
-# Simple In-memory Rate Limiter
-# ─────────────────────────────────────────────────────────
-_rate_windows: dict[str, deque] = defaultdict(deque)
-
-def check_rate_limit(key: str):
-    now = time.time()
-    window = _rate_windows[key]
-    while window and window[0] < now - 60:
-        window.popleft()
-    if len(window) >= settings.rate_limit_per_minute:
-        raise HTTPException(
-            status_code=429,
-            detail=f"Rate limit exceeded: {settings.rate_limit_per_minute} req/min",
-            headers={"Retry-After": "60"},
-        )
-    window.append(now)
-
-# ─────────────────────────────────────────────────────────
-# Simple Cost Guard
-# ─────────────────────────────────────────────────────────
-_daily_cost = 0.0
-_cost_reset_day = time.strftime("%Y-%m-%d")
-
-def check_and_record_cost(input_tokens: int, output_tokens: int):
-    global _daily_cost, _cost_reset_day
-    today = time.strftime("%Y-%m-%d")
-    if today != _cost_reset_day:
-        _daily_cost = 0.0
-        _cost_reset_day = today
-    if _daily_cost >= settings.daily_budget_usd:
-        raise HTTPException(503, "Daily budget exhausted. Try tomorrow.")
-    cost = (input_tokens / 1000) * 0.00015 + (output_tokens / 1000) * 0.0006
-    _daily_cost += cost
-
-# ─────────────────────────────────────────────────────────
-# Auth
-# ─────────────────────────────────────────────────────────
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-
-def verify_api_key(api_key: str = Security(api_key_header)) -> str:
-    if not api_key or api_key != settings.agent_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or missing API key. Include header: X-API-Key: <key>",
-        )
-    return api_key
 
 # ─────────────────────────────────────────────────────────
 # Lifespan
@@ -107,6 +65,7 @@ async def lifespan(app: FastAPI):
         "app": settings.app_name,
         "version": settings.app_version,
         "environment": settings.environment,
+        "instance": INSTANCE_ID,
     }))
     time.sleep(0.1)  # simulate init
     _is_ready = True
@@ -145,7 +104,8 @@ async def request_middleware(request: Request, call_next):
         # Security headers
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers.pop("server", None)
+        if "server" in response.headers:
+            del response.headers["server"]
         duration = round((time.time() - start) * 1000, 1)
         logger.info(json.dumps({
             "event": "request",
@@ -162,6 +122,10 @@ async def request_middleware(request: Request, call_next):
 # ─────────────────────────────────────────────────────────
 # Models
 # ─────────────────────────────────────────────────────────
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=2000,
                           description="Your question for the agent")
@@ -170,6 +134,7 @@ class AskResponse(BaseModel):
     question: str
     answer: str
     model: str
+    served_by: str
     timestamp: str
 
 # ─────────────────────────────────────────────────────────
@@ -182,12 +147,26 @@ def root():
         "app": settings.app_name,
         "version": settings.app_version,
         "environment": settings.environment,
+        "instance": INSTANCE_ID,
         "endpoints": {
             "ask": "POST /ask (requires X-API-Key)",
+            "auth": "POST /auth/token (username/password → JWT)",
             "health": "GET /health",
             "ready": "GET /ready",
         },
     }
+
+
+@app.post("/auth/token", tags=["Auth"])
+async def login(body: LoginRequest):
+    """
+    Authenticate with username/password, receive JWT token.
+
+    Demo users: student/demo123 (user), teacher/teach456 (admin)
+    """
+    user = authenticate_user(body.username, body.password)
+    token = create_token(user["username"], user["role"])
+    return {"access_token": token, "token_type": "bearer", "role": user["role"]}
 
 
 @app.post("/ask", response_model=AskResponse, tags=["Agent"])
@@ -201,28 +180,31 @@ async def ask_agent(
 
     **Authentication:** Include header `X-API-Key: <your-key>`
     """
-    # Rate limit per API key
-    check_rate_limit(_key[:8])  # use first 8 chars as key bucket
+    # Rate limit per API key (sliding window from rate_limiter module)
+    rate_limiter_user.check(_key[:8])
 
-    # Budget check
+    # Budget check (cost guard module)
     input_tokens = len(body.question.split()) * 2
-    check_and_record_cost(input_tokens, 0)
+    estimated_cost = (input_tokens / 1000) * 0.00015
+    cost_guard.check_budget(_key[:8], estimated_cost)
 
     logger.info(json.dumps({
         "event": "agent_call",
         "q_len": len(body.question),
         "client": str(request.client.host) if request.client else "unknown",
+        "instance": INSTANCE_ID,
     }))
 
     answer = llm_ask(body.question)
 
     output_tokens = len(answer.split()) * 2
-    check_and_record_cost(0, output_tokens)
+    cost_guard.record_usage(_key[:8], input_tokens, output_tokens)
 
     return AskResponse(
         question=body.question,
         answer=answer,
         model=settings.llm_model,
+        served_by=INSTANCE_ID,
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
 
@@ -236,6 +218,7 @@ def health():
         "status": status,
         "version": settings.app_version,
         "environment": settings.environment,
+        "instance": INSTANCE_ID,
         "uptime_seconds": round(time.time() - START_TIME, 1),
         "total_requests": _request_count,
         "checks": checks,
@@ -255,12 +238,12 @@ def ready():
 def metrics(_key: str = Depends(verify_api_key)):
     """Basic metrics (protected)."""
     return {
+        "instance": INSTANCE_ID,
         "uptime_seconds": round(time.time() - START_TIME, 1),
         "total_requests": _request_count,
         "error_count": _error_count,
-        "daily_cost_usd": round(_daily_cost, 4),
         "daily_budget_usd": settings.daily_budget_usd,
-        "budget_used_pct": round(_daily_cost / settings.daily_budget_usd * 100, 1),
+        "cost_guard_global_cost": round(cost_guard._global_cost, 4),
     }
 
 
