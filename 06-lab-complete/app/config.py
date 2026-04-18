@@ -22,7 +22,7 @@ class Settings:
     llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "gemini-2.0-flash"))
 
     # Security
-    agent_api_key: str = field(default_factory=lambda: os.getenv("AGENT_API_KEY", "dev-key-change-me"))
+    agent_api_key: str = field(default_factory=lambda: os.getenv("AGENT_API_KEY", "my-secret-key"))
     jwt_secret: str = field(default_factory=lambda: os.getenv("JWT_SECRET", "dev-jwt-secret"))
     allowed_origins: list = field(
         default_factory=lambda: os.getenv("ALLOWED_ORIGINS", "*").split(",")
@@ -44,7 +44,7 @@ class Settings:
     def validate(self):
         logger = logging.getLogger(__name__)
         if self.environment == "production":
-            if self.agent_api_key == "dev-key-change-me":
+            if self.agent_api_key == "my-secret-key":
                 raise ValueError("AGENT_API_KEY must be set in production!")
             if self.jwt_secret == "dev-jwt-secret":
                 raise ValueError("JWT_SECRET must be set in production!")

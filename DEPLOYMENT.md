@@ -20,7 +20,7 @@ $response = Invoke-RestMethod `
   -Uri "https://2a202600333-truong-quang-loc-production.up.railway.app/ask" `
   -Method Post `
   -Headers @{
-    "X-API-Key"   = "YOUR_API_KEY"
+    "X-API-Key"   = "my-secret-key"
     "Content-Type" = "application/json"
   } `
   -Body (@{ question = "What is Docker?" } | ConvertTo-Json)
