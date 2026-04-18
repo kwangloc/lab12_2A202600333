@@ -46,16 +46,21 @@
    - **`CMD`**: cung cấp lệnh/arguments mặc định, **có thể bị ghi đè** hoàn toàn khi truyền lệnh vào `docker run`. Ví dụ: `CMD ["python", "app.py"]` sẽ bị thay thế nếu chạy `docker run image bash`.
    - Kết hợp cả hai: `ENTRYPOINT` làm executable, `CMD` làm default arguments — cho phép override arguments mà không thay executable.
 
+
+
 ### Exercise 2.3: Image size comparison
 - Develop: 1.15 GB
 - Production: 160 MB
 - Difference: 86.1%%
 
+- Diagram: ([Screenshot](./diagram.png))
+
+
 ## Part 3: Cloud Deployment
 
 ### Exercise 3.1: Railway deployment
 - URL: agent-2a202600333-production.up.railway.app
-- Screenshot: ([Screenshot](./screenshot.png))
+- Screenshot: ([Screenshot](./screenshots/exercise_3_1.png))
 
 ## Part 4: API Security
 
