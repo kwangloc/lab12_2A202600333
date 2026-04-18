@@ -1,7 +1,7 @@
 # Deployment Information
 
 ## Public URL
-https://agent-2a202600333-production.up.railway.app
+https://https://2a202600333-truong-quang-loc-production.up.railway.app
 
 ## Platform
 Railway
@@ -10,31 +10,46 @@ Railway
 
 ### Health Check
 ```bash
-curl https://agent-2a202600333-production.up.railway.app/health
+curl https://2a202600333-truong-quang-loc-production.up.railway.app/health
 # Expected: {"status": "ok", "version": "1.0.0", ...}
 ```
 
 ### API Test (with authentication)
 ```bash
-curl -X POST https://agent-2a202600333-production.up.railway.app/ask \
-  -H "X-API-Key: YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is Docker?"}'
-# Expected: {"question": "What is Docker?", "answer": "...", "model": "gpt-4o-mini", ...}
+$response = Invoke-RestMethod `
+  -Uri "https://2a202600333-truong-quang-loc-production.up.railway.app/ask" `
+  -Method Post `
+  -Headers @{
+    "X-API-Key"   = "YOUR_API_KEY"
+    "Content-Type" = "application/json"
+  } `
+  -Body (@{ question = "What is Docker?" } | ConvertTo-Json)
+
+$response
 ```
 
 ### JWT Authentication
 ```bash
 # 1. Login to get token
-curl -X POST https://agent-2a202600333-production.up.railway.app/auth/token \
-  -H "Content-Type: application/json" \
-  -d '{"username": "student", "password": "demo123"}'
+$response = Invoke-RestMethod `
+  -Uri "https://2a202600333-truong-quang-loc-production.up.railway.app/auth/token" `
+  -Method Post `
+  -Headers @{
+    "Content-Type" = "application/json"
+  } `
+  -Body (@{
+    username = "student"
+    password = "demo123"
+  } | ConvertTo-Json)
+
+$response
+
 # Expected: {"access_token": "eyJ...", "token_type": "bearer", "role": "user"}
 ```
 
 ### Readiness Probe
 ```bash
-curl https://agent-2a202600333-production.up.railway.app/ready
+curl https://2a202600333-truong-quang-loc-production.up.railway.app/ready
 # Expected: {"ready": true}
 ```
 
@@ -74,6 +89,6 @@ python check_production_ready.py
 - `APP_VERSION` — Application version
 
 ## Screenshots
-- [Deployment dashboard](screenshots/dashboard.png)
-- [Service running](screenshots/running.png)
-- [Test results](screenshots/test.png)
+- [Deployment dashboard](./screenshots/dashboard.png)
+- [Service running](./screenshots/running.png)
+- [Test results](./screenshots/test.png)
