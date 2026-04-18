@@ -1,7 +1,7 @@
 # Deployment Information
 
 ## Public URL
-https://https://2a202600333-truong-quang-loc-production.up.railway.app
+https://2a202600333-truong-quang-loc-production.up.railway.app
 
 ## Platform
 Railway
