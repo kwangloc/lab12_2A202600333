@@ -162,23 +162,44 @@ Before submitting, verify your deployment:
 
 ```bash
 # 1. Health check
-curl https://your-app.railway.app/health
+Invoke-RestMethod -Uri "https://2a202600333-truong-quang-loc-production.up.railway.app/health" -Method Get
 
-# 2. Authentication required
-curl https://your-app.railway.app/ask
-# Should return 401
+# 2. Authentication required (should return 401)
+Invoke-RestMethod -Uri "https://2a202600333-truong-quang-loc-production.up.railway.app/ask" -Method Get
 
-# 3. With API key works
-curl -H "X-API-Key: YOUR_KEY" https://your-app.railway.app/ask \
-  -X POST -d '{"user_id":"test","question":"Hello"}'
-# Should return 200
+# 3. With API key works (should return 200)
+$response = Invoke-RestMethod `
+  -Uri "https://2a202600333-truong-quang-loc-production.up.railway.app/ask" `
+  -Method Post `
+  -Headers @{
+    "X-API-Key"   = "my-secret-key"
+    "Content-Type" = "application/json"
+  } `
+  -Body (@{
+    user_id  = "test"
+    question = "Hello"
+  } | ConvertTo-Json)
 
-# 4. Rate limiting
-for i in {1..15}; do 
-  curl -H "X-API-Key: YOUR_KEY" https://your-app.railway.app/ask \
-    -X POST -d '{"user_id":"test","question":"test"}'; 
-done
-# Should eventually return 429
+$response
+
+# 4. Rate limiting (should eventually return 429)
+for ($i = 1; $i -le 15; $i++) {
+  try {
+    Invoke-RestMethod `
+      -Uri "https://2a202600333-truong-quang-loc-production.up.railway.app/ask" `
+      -Method Post `
+      -Headers @{
+        "X-API-Key"   = "my-secret-key"
+        "Content-Type" = "application/json"
+      } `
+      -Body (@{
+        user_id  = "test"
+        question = "test"
+      } | ConvertTo-Json)
+  } catch {
+    Write-Output "Request $i failed with status: $($_.Exception.Response.StatusCode.value__)"
+  }
+}
 ```
 
 ---

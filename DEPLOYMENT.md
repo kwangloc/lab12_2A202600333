@@ -67,7 +67,7 @@ curl http://localhost:8080/health
 
 # Ask with API key
 curl -X POST http://localhost:8080/ask \
-  -H "X-API-Key: dev-key-change-me-in-production" \
+  -H "X-API-Key: my-secret-key" \
   -H "Content-Type: application/json" \
   -d '{"question": "Hello"}'
 
