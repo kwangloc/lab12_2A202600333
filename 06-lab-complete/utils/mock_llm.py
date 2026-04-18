@@ -27,9 +27,9 @@ def _get_client():
 
 # Fallback mock (used when GEMINI_API_KEY is not set)
 _MOCK_RESPONSES = [
-    "Đây là câu trả lời từ AI agent (mock — set GEMINI_API_KEY to use real Gemini).",
-    "Agent đang hoạt động tốt! (mock response) Hỏi thêm câu hỏi đi nhé.",
-    "Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận.",
+    "Hi, what can I help you with? (mock response)",
+    "Agent received your message. (mock response)",
+    "I am an AI agent deployed on the cloud. Your question has been received. (mock response)",
 ]
 
 
@@ -51,7 +51,7 @@ def ask(question: str, delay: float = 0.0) -> str:
         return response.text
     except Exception as e:
         logger.error(f"Gemini API error: {e} — falling back to mock response")
-        return f"Gemini API error: {e} — using mock response: " + random.choice(_MOCK_RESPONSES)
+        return f"Gemini API error, using mock response: " + random.choice(_MOCK_RESPONSES)
 
 
 def ask_stream(question: str):
