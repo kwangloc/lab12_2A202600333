@@ -213,7 +213,7 @@ async def ask_agent(
 def health():
     """Liveness probe. Platform restarts container if this fails."""
     status = "ok"
-    checks = {"llm": "mock" if not settings.openai_api_key else "openai"}
+    checks = {"llm": "gemini" if settings.gemini_api_key else "mock"}
     return {
         "status": status,
         "version": settings.app_version,
